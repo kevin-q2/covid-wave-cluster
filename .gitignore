@@ -159,6 +159,8 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
+.python-version
+
 # Some unwanted data (too large to push!)
 data/cleaning/
 data/raw/
@@ -166,7 +168,6 @@ data/old/
 data/us_county_centers.txt
 data/us_county_daily.csv
 data/visualization/tl_2020_us_county/
-
 
 *.sh
 *error.txt
