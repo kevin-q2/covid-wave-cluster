@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.isotonic import IsotonicRegression
 import multiprocessing as mp
 from multiprocessing import Pool
-from ._dynamic_segment import *
+#from ._dynamic_segment import *
 import time
 
 

@@ -1,5 +1,5 @@
 [project]
-name = "wave-cluster"
+name = "wave_cluster"
 version = "0.1.0"
 description = "Clustering spatio-temporal waves of Covid-19"
 authors = [
@@ -14,10 +14,33 @@ dependencies = [
     "scipy (>=1.15.2,<2.0.0)",
     "matplotlib (>=3.10.1,<4.0.0)",
     "scikit-learn (>=1.6.1,<2.0.0)",
-    "geopandas (>=1.0.1,<2.0.0)"
+    "geopandas (>=1.0.1,<2.0.0)",
+    "jupyter (>=1.1.1,<2.0.0)",
+    "seaborn (>=0.13.2,<0.14.0)",
+    "networkx (>=3.4.2,<4.0.0)",
+    "pytest (>=8.3.5,<9.0.0)"
 ]
 
-
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
+requires = ["poetry-core>=2.0.0,<3.0.0", "setuptools", "cython", "numpy"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+packages = [
+    { include = "wave_cluster", from = "src"},
+]
+include = [
+    { path = "src/wave_cluster/**/*.so", format = "wheel" },
+]
+# if not already excluded via .gitignore
+exclude = [
+    "**/*.c"
+]
+
+[tool.poetry.build]
+script = "build.py"
+
+[tool.poetry.group.build.dependencies]
+setuptools = "^78.1.0"
+cython = "^3.0.12"
+

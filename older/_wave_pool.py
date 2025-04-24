@@ -4,7 +4,7 @@ import scipy
 from scipy.sparse import csr_matrix
 import multiprocessing as mp
 from multiprocessing import Pool
-from ._tools import overlap_graph
+from ..src.wave_cluster.utils import overlap_graph
 
 
 

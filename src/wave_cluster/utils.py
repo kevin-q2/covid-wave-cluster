@@ -3,7 +3,7 @@ import pandas as pd
 import math
 from sklearn.metrics.pairwise import haversine_distances
 from math import radians
-from ._dynamic_time_warp import dtw
+#from ...older._dynamic_time_warp import dtw
 from itertools import combinations
 from scipy.sparse import csr_matrix
 
@@ -44,9 +44,22 @@ def window_average(X, front, back):
     return np.array(sliders)
 
 
-# Simple L2 norm distance between vectors x and y
-def l2(x,y):
-    return np.linalg.norm(x-y)
+####################################################################################################
+
+
+def euclidean_distance(x, y):
+    """Euclidean Distance between points x and y
+    Args:
+        x (np.ndarray): point in euclidean space
+        y (np.ndarray): point in euclidean space
+
+    Returns:
+        (float): computed distance
+    """
+    return np.linalg.norm(x - y, ord=2)
+
+
+####################################################################################################
 
 
 # DTW alignment distance between vectors x and y

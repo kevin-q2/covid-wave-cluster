@@ -6,7 +6,7 @@ import time
 import math
 import random
 import copy
-from ._tools import remove_rows_cols,add_row_col 
+from .utils import remove_rows_cols,add_row_col 
 
 #####################################################################################################################
 #   Clustering with Cliques -- Given a matrix of distances and a list of edges,
