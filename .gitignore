@@ -172,5 +172,8 @@ data/visualization/tl_2020_us_county/
 *.sh
 *error.txt
 *out.txt
+*.so
+*.c
 batch/county/data/
 examples/covid_county_clustering.ipynb
+

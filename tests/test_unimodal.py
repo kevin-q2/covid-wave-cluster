@@ -1,5 +1,5 @@
 import numpy as np
-from wave_cluster import Unimodal, error_tables
+from wave_cluster import Unimodal
 
 
 def test_isotonic(alternating, binary_unimodal):
@@ -32,4 +32,28 @@ def test_unimodal(binary_unimodal):
     inflections = np.array([0,5,10,17,22])
     yhat, errors = 0
 
+
+
+def test_increasing_error_table():
+    data = np.array([1, 2, 3, 2, 1])
+    unifit = Unimodal()
+    inc_table, dec_table = unifit.error_tables(data)
+    error_table = inc_table
+    
+    # Assert the shape of the error table
+    assert error_table.shape == (len(data), len(data) + 1)
+    
+    # Assert specific values (example: diagonal should be zero)
+    assert np.allclose(np.diag(error_table), 0)
+    
+
+def test_decreasing_error_table():
+    data = np.array([1, 2, 3, 2, 1])
+    error_table = decreasing_error_table(data, normalize=True)
+    
+    # Assert the shape of the error table
+    assert error_table.shape == (len(data), len(data))
+    
+    # Assert specific values (example: diagonal should be zero)
+    assert np.allclose(np.diag(error_table), 0)
     
