@@ -4,6 +4,7 @@ cimport numpy as cnp
 cnp.import_array()
 from . import isotonic_error_table
 import time
+from typing import Tuple
 
 # Typing
 from numpy.typing import NDArray
@@ -11,7 +12,11 @@ DTYPE = np.float64
 ctypedef cnp.float64_t DTYPE_t
 
 
-def dynamic_unimodal(cnp.ndarray[DTYPE_t, ndim = 1] data, float penalty = 0.0, normalize : bool = True):
+def dynamic_unimodal(
+    cnp.ndarray[DTYPE_t, ndim = 1] data,
+    float penalty = 0.0,
+    normalize : bool = True
+) -> Tuple[cnp.ndarray[int], cnp.ndarray[int]]:
     """
     Given an input data vector, find the minimum cost segmentation boundaries 
     between fitted isotonic curves. 
@@ -37,9 +42,6 @@ def dynamic_unimodal(cnp.ndarray[DTYPE_t, ndim = 1] data, float penalty = 0.0, n
             which [0,10) is an increasing segment, [10,20) is decreasing, [20,30) is increasing,
             and [30,40) is decreasing. The directions array would then be [1, 0, 1, 0].
     """
-    full_start = time.time()
-
-    start1 = time.time()
     if not data.ndim == 1:
         raise ValueError("Input data must be a 1d array.")
 
@@ -62,10 +64,6 @@ def dynamic_unimodal(cnp.ndarray[DTYPE_t, ndim = 1] data, float penalty = 0.0, n
     memo_table[0, 0] = 0
     memo_table[1, 0] = 0
 
-    end1 = time.time()
-    print(f"Time taken to initialize and compute error tables: {end1 - start1:.4f} seconds")
-
-    start2 = time.time()
     for i in range(1, n + 1):
         for direction in range(2):
             min_error = np.inf
@@ -80,12 +78,7 @@ def dynamic_unimodal(cnp.ndarray[DTYPE_t, ndim = 1] data, float penalty = 0.0, n
 
             memo_table[direction, i] = min_error
 
-    end2 = time.time()
-    print(f"Time taken to fill memo table: {end2 - start2:.4f} seconds")
 
-    print(memo_table)
-
-    start3 = time.time()
     # Backtrack:
     cdef int current_direction, current_idx
     cdef DTYPE_t current_error
@@ -95,10 +88,6 @@ def dynamic_unimodal(cnp.ndarray[DTYPE_t, ndim = 1] data, float penalty = 0.0, n
 
     inflections = [current_idx]
     directions = []
-    end3 = time.time()
-    print(f"Time taken to initialize backtrack: {end3 - start3:.4f} seconds")
-
-    start4 = time.time()
     while current_idx > 0:
         for j in range(current_idx - 1, -1, -1):
             if current_direction == 0:
@@ -114,9 +103,4 @@ def dynamic_unimodal(cnp.ndarray[DTYPE_t, ndim = 1] data, float penalty = 0.0, n
                 current_error = memo_table[current_direction, current_idx]
                 break 
 
-    end4 = time.time()
-    print(f"Time taken to backtrack: {end4 - start4:.4f} seconds")
-
-    full_end = time.time()
-    print(f"Total time taken: {full_end - full_start:.4f} seconds")
-    return inflections, directions
+    return np.array(inflections), np.array(directions)

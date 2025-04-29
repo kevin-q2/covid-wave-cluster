@@ -6,6 +6,11 @@ from wave_cluster.isotonic_error_table import (
     error_tables
 )
 
+# NOTE: The following tests were written with the assistance of generative AI. 
+# Nevertheless, they have been reviewed, modified, and validated to
+# ensure correctness and reliability.
+
+
 def test_increasing_error_table_basic():
     data = np.array([1.0, 2.0, 3.0, 2.0, 1.0])
     table = increasing_error_table(data, normalize=False)

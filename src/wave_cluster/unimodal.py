@@ -1,56 +1,81 @@
 import numpy as np
 from numpy.typing import NDArray
 from scipy.optimize import isotonic_regression
-from .utils import euclidean_distance
+from .distances import euclidean_distance
 from . import isotonic_error_table, segment
+from typing import Tuple
 
 
 class Unimodal:
     """
-    Tool for fitting unimodal curves to data.
+    Class used for fitting k unimodal curves to a length n data vector.
     """
-    def __init__(self):
-        pass
-    
+    def __init__(self, penalty : float = 0.0, normalize : bool = True):
+        """
+        Args: 
+            penalty (float): Per-segment penalty. Larger values penalize 
+                solutions with more segments.
+            normalize (bool): If True, normalize the errors for each possible fitted segment 
+                to the range [0,1].
 
-    def fit_segment(
+        Attrs:
+            inflections (np.ndarray[int]): Size k + 1 array of indices for inflection points 
+                which define the boundaries for k subsegments of the data. Specifically, 
+                items i and (i + 1) of the inflections array define the boundary points for 
+                a single segment.
+            directions (np.ndarray[int]): Size k array of binary values indicating the
+                direction of the isotonic curve for each segment. 1 indicates increasing,
+                while 0 indicates decreasing. For example, if inflections = [0,10,20,30,40]
+                and directions = [1,0,1,0], then the first segment [0,10) is increasing,
+                the second segment [10,20) is decreasing, the third segment [20,30) is increasing,
+                and the fourth segment [30,40) is decreasing.
+            est: Size n array of unimodal model regression estimates to the fitted data vector.
+            errors: Size k array of sum of squared errors for each individual segment.
+        """
+        self.normalize = normalize
+        self.penalty = penalty
+        self.inflections = None
+        self.directions = None
+        self.est = None
+        self.errors = None
+        self.waves = None
+
+    def iso_regression(
         self,
-        data : NDArray,
+        y : NDArray,
         start_idx : int,
         end_idx : int,
         increasing : bool
-    ):
+    ) -> Tuple[NDArray, float]:
         """
         Fits an isotonic regression model to a segment of the input data. 
 
         Args:
-            data (np.ndarray): Input 1d data vector. 
+            y (np.ndarray): Input 1d data vector. 
             start_idx (int): Starting index for the segment
             end_idx (int): Ending index for the segment
             increasing (bool): Boolean value deciding if the isotonic curve should be 
                 monotonically increasing (True) or decreasing (False).
 
         Returns:
-            data_est, error (np.ndarray, float): Fitted, estimate data vector and its 
+            seg_est, error (np.ndarray, float): Fitted, estimate data vector and its 
                 sum of squares error with the original data.
         """
-        n = data.shape[0]
-        assert len(data.shape) == 1, "Input data must be a 1d array."
+        n = y.shape[0]
+        assert len(y.shape) == 1, "Input data must be a 1d array."
         assert end_idx > start_idx, "Ending index must be greater than starting index."
         assert start_idx >=0 and start_idx < n
         assert end_idx > 0 and end_idx <= n
 
-        y = data[start_idx:end_idx]
-        data_est = isotonic_regression(y, increasing = increasing).x
-        error = euclidean_distance(y, data_est)
-        return data_est, error
+        y = y[start_idx:end_idx]
+        seg_est = isotonic_regression(y, increasing = increasing).x
+        error = euclidean_distance(y, seg_est)
+        return seg_est, error
 
     
-    def fit_segments(
+    def unimodal_regression(
         self,
-        data : NDArray,
-        inflections : NDArray,
-        directions : NDArray
+        y : NDArray
     ):
         """
         Given a predetermined list of inflection/segmentation points, 
@@ -64,43 +89,42 @@ class Unimodal:
         increasing from 20 to 30, and decreasing from 30 to 40.
 
         Args:
-            data (np.ndarray): Size n input data vector. 
-            inflections (np.ndarray[int]): Size k + 1 array of indices for inflection points 
-                which define the boundaries for k subsegments of the data. Specifically, 
-                items i and (i + 1) of the inflections array define the boundary points for 
-                a single segment.
-            directions (np.ndarray[int]): Size k array of binary values indicating the
-                direction of the isotonic curve for each segment. 1 indicates increasing,
-                while 0 indicates decreasing. For example, if inflections = [0,10,20,30,40]
-                and directions = [1,0,1,0], then the first segment [0,10) is increasing,
-                the second segment [10,20) is decreasing, the third segment [20,30) is increasing,
-                and the fourth segment [30,40) is decreasing.
+            y (np.ndarray): Size n input data vector. 
 
         Returns:
             data_est, errors (Tuple[NDArray, NDArray]): Size n array of unimodal model estimates, 
                 along with a size k array of sum of squared errors for each segment.
         """
+        assert self.inflections is not None, "Inflections must be set before fitting segments."
+        assert self.directions is not None, "Directions must be set before fitting segments."
+        assert len(self.inflections) > 1, "Inflections must have at least 2 boudnary points."
+        assert len(self.inflections) == len(self.directions) + 1, \
+        "Inflections and directions must have compatible lengths."
+        for i in range(len(self.directions) - 1):
+            assert self.directions[i] == 1 - self.directions[i + 1], "Directions must alternate."
+            
         errors = []
-        data_est = np.zeros(len(data))
-        data_est[:] = np.nan
+        est = np.zeros(len(y))
+        est[:] = np.nan
         
-        for i in range(len(inflections) - 1):                
-            start_idx = inflections[i]
-            end_idx = inflections[i + 1]
-            data_est_segment, error = self.fit_segment(
-                data = data,
+        for i in range(len(self.inflections) - 1):                
+            start_idx = self.inflections[i]
+            end_idx = self.inflections[i + 1]
+            data_est_segment, error = self.iso_regression(
+                y = y,
                 start_idx = start_idx,
                 end_idx = end_idx,
-                increasing = directions[i]
+                increasing = self.directions[i]
             )
             
             errors.append(error)
-            data_est[start_idx:end_idx] = data_est_segment
+            est[start_idx:end_idx] = data_est_segment
 
-        return data_est, errors
+        self.est = est
+        self.errors = errors
     
 
-    def error_tables(self, data : NDArray, normalize : bool = False):
+    def error_tables(self, y : NDArray) -> Tuple[NDArray, NDArray]:
         """
         Access to internal functions for computing isotonic error tables. 
 
@@ -117,31 +141,74 @@ class Unimodal:
                 indexed by starting at i and ending at j. 
 
         """
-        return isotonic_error_table.error_tables(data, normalize)
+        return isotonic_error_table.error_tables(y, self.normalize)
     
 
-    def segment(self, data : NDArray, penalty : float = 0.0):
+    def segment(self, y : NDArray):
         """
         Given an input data vector, find the minimum cost segmentation boundaries, 
         or inflection points, between fitted isotonic curves. 
 
-        Args:
-            data (np.ndarray[float64]): Size n input data array.
+        Wrapper for the segment.dynamic_unimodal function.
 
-            penalty (float): Per-segment penalty. Larger values penalize solutions with more segments.
+        Args:
+            y (np.ndarray[float64]): Size n input data array.
+        """
+        self.inflections, self.directions = segment.dynamic_unimodal(y, self.penalty)
+
+    
+    def get_waves(self) -> NDArray:
+        """
+        Given fitted isotonic inflection points and their corresponding directions, 
+        generates a corresponding array of inflection or change points for full unimodal waves. 
+        A wave should generally consist of both an increasing and a decreasing 
+        isotonic segment (in that order), and for neat input settings we should find that 
+        the array returned is simply inflections[::2] (every other segment boundary).
+
+        However, we may also find that the start or end of the data vector is not 
+        a complete wave (i.e. starts in a decreasing mode or ends in an increasing one).
+        In these cases on the edges of the data vector, we allow a wave to be defined by
+        a single isotonic segment. 
 
         Returns:
-            inflections (np.ndarray[int64]): Array of indices for which consecutive 
-                entries (i, i+1) describe the boundaries of segmentation for the data array. 
-
-            directions (np.ndarray[int64]): Binary array with directional information for 
-                each fitted segment, where 1s indicate increasing segments and 0s indicate decreasing.
-                For the unimodal model, consecutive segments always alternate between 
-                increasing and decreasing isotonic curves. 
-
-                For example, we may want to describe an inflections array [0, 10, 20, 30, 40] in 
-                which [0,10) is an increasing segment, [10,20) is decreasing, [20,30) is increasing,
-                and [30,40) is decreasing. The directions array would then be [1, 0, 1, 0].
+            wave_inflections (np.ndarray[int64]): Array of indices for which consecutive
+                entries (i, i+1) describe the boundaries of a unimodal wave segmentation
+                for the data array. 
         """
-        inflections, directions = segment.dynamic_unimodal(data, penalty)
-        return inflections, directions
+        assert len(self.inflections) > 1, "Inflections must have at least 2 boudnary points."
+        assert len(self.inflections) == len(self.directions) + 1, \
+        "Inflections and directions must have compatible lengths."
+        for i in range(len(self.directions) - 1):
+            assert self.directions[i] == 1 - self.directions[i + 1], "Directions must alternate."
+
+        n = len(self.inflections)
+        start = 0
+        end = n
+
+        if self.directions[0] == 0:
+            start = 1
+        
+        if self.directions[-1] == 1:
+            end = n - 1
+
+        wave_inflections = self.inflections[start:end:2]
+
+        if self.directions[0] == 0:
+            wave_inflections = np.insert(wave_inflections, 0, self.inflections[0])
+
+        if self.directions[-1] == 1:
+            wave_inflections = np.append(wave_inflections, self.inflections[-1])
+
+        return np.array(wave_inflections)
+    
+
+    def fit(self, y : NDArray):
+        """
+        Given an input data vector, fits the unimodal model.
+
+        Args:
+            y (np.ndarray[float64]): Size n input data array.
+        """
+        self.segment(y)
+        self.unimodal_regression(y)
+        self.waves = self.get_waves()

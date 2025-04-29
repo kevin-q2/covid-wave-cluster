@@ -3,16 +3,20 @@ import numpy as np
 cimport numpy as cnp
 cnp.import_array()
 from scipy.optimize import isotonic_regression
-from .utils import euclidean_distance
+from .distances import euclidean_distance
 
 # Typing
 from numpy.typing import NDArray
+from typing import Tuple
 DTYPE = np.float64
 ctypedef cnp.float64_t DTYPE_t
 
 # Might be able to speed this up more by using a minimum segement size!
 
-def increasing_error_table(cnp.ndarray[DTYPE_t, ndim = 1] data, normalize : bool = False):
+def increasing_error_table(
+    cnp.ndarray[DTYPE_t, ndim = 1] data,
+    normalize : bool = False
+) -> cnp.ndarray[DTYPE_t]:
     """
     Computes a table where each entry (i,j) describes the error of fitting an 
     monotonic increasing isotonic regression model to a segment of a data vector 
@@ -57,7 +61,10 @@ def increasing_error_table(cnp.ndarray[DTYPE_t, ndim = 1] data, normalize : bool
     return table
 
 
-def decreasing_error_table(cnp.ndarray[DTYPE_t, ndim = 1] data, normalize : bool = False):
+def decreasing_error_table(
+    cnp.ndarray[DTYPE_t, ndim = 1] data,
+    normalize : bool = False
+) -> cnp.ndarray[DTYPE_t]:
     """
     Computes a table where each entry (i,j) describes the error of fitting an 
     monotonic increasing isotonic regression model to a segment of a data vector 
@@ -98,7 +105,13 @@ def decreasing_error_table(cnp.ndarray[DTYPE_t, ndim = 1] data, normalize : bool
     return table
 
 
-def error_tables(cnp.ndarray[DTYPE_t, ndim = 1] data, normalize : bool = False):
+def error_tables(
+    cnp.ndarray[DTYPE_t, ndim = 1] data,
+    normalize : bool = False
+) -> Tuple[
+    cnp.ndarray[DTYPE_t],
+    cnp.ndarray[DTYPE_t]
+]:
     """
     Computes the increasing and decreasing error tables for a given data vector.
 
