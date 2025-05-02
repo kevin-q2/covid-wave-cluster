@@ -162,11 +162,8 @@ cython_debug/
 .python-version
 
 # Some unwanted data (too large to push!)
-data/cleaning/
-data/raw/
-data/old/
-data/us_county_centers.txt
-data/us_county_daily.csv
+data/county_centers.txt
+data/county_daily.csv
 data/visualization/tl_2020_us_county/
 
 *.sh
@@ -174,6 +171,5 @@ data/visualization/tl_2020_us_county/
 *out.txt
 *.so
 *.c
-batch/county/data/
-examples/covid_county_clustering.ipynb
+*.DS_Store
 
