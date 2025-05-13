@@ -95,3 +95,95 @@ def wave_mask(x : NDArray, t1 : int, t2 : int, fill : float = 0.0) -> NDArray:
 
         
 ####################################################################################################
+
+
+def get_timed_clusters(
+        pool : NDArray,
+        cluster_labels : NDArray,
+        time_idx : int,
+        fraction : float = 1.0
+) -> NDArray:
+    """
+    Find all clusters which are active at a given time. 
+    A cluster is considered active if the fraction of its members 
+    that are active at the given time is greater than or equal to the input fraction.
+    More specifically this is designed for the use case of clustering waves.
+    We say that a wave is active at time t if start of the wave <= t < end of the wave.
+    In other words, t falls within the boundaries of the wave. 
+
+    Args:
+        pool (np.ndarray): Pool of waves, where each row is a wave and columns are 
+            [location_index, start, end]. 
+        cluster_labels (np.ndarray): Labels of the clusters.
+        time_idx (int): Time index to check for active clusters.
+        fraction (float): Fraction of members in the cluster that must be active at the given time.
+
+    Returns:
+        timed_clusters (np.ndarray): 1d array of cluster labels that are active at the given time.
+    """
+    timed_clusters = []
+    unique_labels = np.unique(cluster_labels)
+    for c in unique_labels:
+        clust = set(np.where(cluster_labels == c)[0])
+        satisfies = 0
+        for i in clust:
+            if pool[i,1] <= time_idx and pool[i,2] > time_idx:
+                satisfies += 1
+
+        if satisfies/len(clust) >= fraction:
+            timed_clusters.append(c)
+
+    return np.array(timed_clusters)
+
+
+##########################################################################################
+
+
+def get_common_segments(
+        df : pd.DataFrame,
+        pool : NDArray,
+        wave_indices : NDArray,
+        mask : bool = True
+) -> pd.DataFrame:
+    """
+    Get the common time segments from a set of waves. Specifically, this function 
+    takes a dataframe and a list of waves, where each wave is defined by 
+    a column index and start/end times. For a given subset of those waves, 
+    we then do the following:
+
+    1. Compute the intersection of the start and end times of the waves.
+    2. If the intersection is empty, return None.
+    3. Otherwise, return a DataFrame containing the common time segments for the waves in the pool.
+    4. If mask is True, mask the DataFrame so that only the common time segments are shown.
+     
+    Args:
+        df (pd.DataFrame): DataFrame containing the original set of data for the waves.
+        pool (np.ndarray): Pool of waves, where each row is a wave and columns are 
+            [location_index, start, end].
+        wave_indices (np.ndarray): Indices of the waves to consider in the pool.
+        mask (bool): If True, mask the DataFrame so that only the common time segments are shown.
+            Defaults to True.
+
+    Returns:
+        pd.DataFrame: DataFrame containing the common time segments for the waves in the pool.
+            If no common time segments exist, return None.
+    """
+    pool_subset = pool[wave_indices,:]
+    max_start = np.max(pool_subset[:,1])
+    min_finish = np.min(pool_subset[:,2])
+
+    if max_start > min_finish:
+        return None
+
+    else:
+        if mask:
+            masked = pd.Series(
+                [True if i < max_start or i >= min_finish else False for i in range(len(df))],
+                index = df.index
+            )
+            return df.mask(masked, np.nan).iloc[:, pool_subset[:,0]]
+        else:
+            return df.iloc[max_start : min_finish, pool_subset[:,0]]
+        
+
+###########################################################################################
