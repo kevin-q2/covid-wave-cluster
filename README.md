@@ -45,9 +45,3 @@ see most of the code needed to run the segmentation and clustering processes, an
 
 Often these are computationally intensive processes which cannot be confined to notebooks. In that case, we 
 also provide scripts to fully reproduce all of our exeriments within the `experiments` folder.
-
-So often in the notebooks you'll see that we import data from the `batch/` folder. In `batch/` we include 
-sets of python scripts which can be run to collect that data. Again, those are often computationally intensive to run,
-so we also include folders `batch/state/data/` or `batch/country/data` with data for precomputed segmentations, pairwise 
-distance matrices, and cluster analysis information. 
-     
