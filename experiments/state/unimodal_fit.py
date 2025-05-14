@@ -7,13 +7,13 @@ from data_load import load_data
 
 cpu_count = 16
 
-data = load_data()
-data_array = data.to_numpy()
+infections = load_data()
+data_array = infections.to_numpy()
 
-wave_mod = Unimodal(penalty = 0.01, normalize = True)
+wave_mod = Unimodal(penalty_by_length = 15)
 dist_mod = DynamicTimeWarp(
     mult_penalty = [1.0,1.0,1.0],
-    add_penalty = [0.05,0.05,0.0],
+    add_penalty = [1/7,1/7,0.0],
     normalize = True
 )
 wave_pool = WavePool(

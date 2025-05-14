@@ -15,7 +15,8 @@ ctypedef cnp.float64_t DTYPE_t
 def dynamic_unimodal(
     cnp.ndarray[DTYPE_t, ndim = 1] data,
     float penalty = 0.0,
-    normalize : bool = True
+    int penalty_by_length = 0,
+    normalize : bool = False,
 ) -> Tuple[cnp.ndarray[int], cnp.ndarray[int]]:
     """
     Given an input data vector, find the minimum cost segmentation boundaries 
@@ -25,6 +26,11 @@ def dynamic_unimodal(
         data (np.ndarray[float64]): Size n input data array.
 
         penalty (float): Per-segment penalty. Larger values penalize solutions with more segments.
+
+        penalty_by_length (int): If greater than 0, uses a penalty which is set as the average 
+            error among segments of a given legnth. NOTE: If this is greater 0, it will 
+            override the normal penalty parameter. Defaults to 0 in which case the 
+            standard penalty parameter is used.
 
         normalize (bool): If True, normalize the error tables so that values fall 
             in the range [0,1]. Default is True.
@@ -55,6 +61,13 @@ def dynamic_unimodal(
     inc_error_table, dec_error_table = (
         isotonic_error_table.error_tables(data, normalize = normalize)
     )
+    cdef int it
+    if penalty_by_length > 0:
+        errors = []
+        for it in range(n - penalty_by_length):
+            errors.append(inc_error_table[it, it + penalty_by_length])
+            errors.append(dec_error_table[it, it + penalty_by_length])
+        penalty = np.mean(errors)
 
     # Fill memo table:
     cdef DTYPE_t error, min_error

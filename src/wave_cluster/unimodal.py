@@ -10,11 +10,22 @@ class Unimodal:
     """
     Class used for fitting k unimodal curves to a length n data vector.
     """
-    def __init__(self, penalty : float = 0.0, normalize : bool = True):
+    def __init__(
+            self,
+            penalty : float = 0.0,
+            penalty_by_length : int = 0,
+            normalize : bool = False
+    ):
         """
         Args: 
             penalty (float): Per-segment penalty. Larger values penalize 
                 solutions with more segments.
+
+            penalty_by_length (int): If greater than 0, uses a penalty which is set as the average 
+                error among segments of a given legnth. NOTE: If this is greater than 0, it will 
+                override the normal penalty parameter. Defaults to 0 in which case the 
+                standard penalty parameter is used.
+
             normalize (bool): If True, normalize the errors for each possible fitted segment 
                 to the range [0,1].
 
@@ -32,8 +43,9 @@ class Unimodal:
             est: Size n array of unimodal model regression estimates to the fitted data vector.
             errors: Size k array of sum of squared errors for each individual segment.
         """
-        self.normalize = normalize
         self.penalty = penalty
+        self.penalty_by_length = penalty_by_length
+        self.normalize = normalize
         self.inflections = None
         self.directions = None
         self.est = None
@@ -154,7 +166,12 @@ class Unimodal:
         Args:
             y (np.ndarray[float64]): Size n input data array.
         """
-        self.inflections, self.directions = segment.dynamic_unimodal(y, self.penalty)
+        self.inflections, self.directions = segment.dynamic_unimodal(
+            data = y,
+            penalty = self.penalty,
+            penalty_by_length = self.penalty_by_length,
+            normalize = self.normalize
+        )
 
     
     def get_waves(self) -> NDArray:

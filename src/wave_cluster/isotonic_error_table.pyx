@@ -122,6 +122,8 @@ def error_tables(
             in the range [0,1]. This function does so by taking the maximum between the 
             two tables, so that their values may be used concurrently. Default is False.
 
+        normalize_length (int): 
+
     Returns:
         inc_table (np.ndarray[float64]): Size n x (n + 1) increasing error table. 
             Includes an extra column to allow ending index to include the final data entry.
