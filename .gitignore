@@ -171,4 +171,5 @@ data/county/visualization/*
 *.so
 *.c
 *.DS_Store
+*.vscode/
 

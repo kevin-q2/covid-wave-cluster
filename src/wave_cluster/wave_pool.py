@@ -21,6 +21,7 @@ class WavePool:
             fit_waves_ : bool = True,
             fit_distances_ : bool = True,
             mask : bool = True,
+            threshold : float = np.inf,
             cpu_count : int = 1
         ):
         """
@@ -47,6 +48,10 @@ class WavePool:
                 same length as their parent data vector, they are given 0s for time indices 
                 outside of the wave segment. This is useful for computing distances between
                 waves. Defaults to True.
+
+            threshold (int): The maximum number of days a pair of waves can differ in their 
+                start time, before the distance is automatically set to infinity. Defaults to 
+                np.inf, in which case distances are computed between all possible pairs of waves. 
 
             cpu_count (int): Number of processors available to use in parallel.
 
@@ -145,24 +150,29 @@ class WavePool:
         if self.pool is None:
             raise ValueError("Wave pool is not fitted. Please run .fit_waves() first.")
         
-        distance_mod = copy.deepcopy(self.distance_module)
-
-        if self.mask:
-            x = wave_mask(
-                self.X[: , self.pool[wave_idx1][0]],
-                self.pool[wave_idx1][1],
-                self.pool[wave_idx1][2]
-            )
-            y = wave_mask(
-                self.X[: , self.pool[wave_idx2][0]],
-                self.pool[wave_idx2][1],
-                self.pool[wave_idx2][2]
-            )
+        start1 = self.pool[wave_idx1][1]
+        start2 = self.pool[wave_idx2][1]
+        if np.abs(start1 - start2) > self.threshold:
+            distance = np.inf
         else:
-            x = self.X[self.pool[wave_idx1][1] : self.pool[wave_idx1][2], self.pool[wave_idx1][0]]
-            y = self.X[self.pool[wave_idx2][1] : self.pool[wave_idx2][2], self.pool[wave_idx2][0]]
+            if self.mask:
+                x = wave_mask(
+                    self.X[: , self.pool[wave_idx1][0]],
+                    self.pool[wave_idx1][1],
+                    self.pool[wave_idx1][2]
+                )
+                y = wave_mask(
+                    self.X[: , self.pool[wave_idx2][0]],
+                    self.pool[wave_idx2][1],
+                    self.pool[wave_idx2][2]
+                )
+            else:
+                x = self.X[self.pool[wave_idx1][1] : self.pool[wave_idx1][2], self.pool[wave_idx1][0]]
+                y = self.X[self.pool[wave_idx2][1] : self.pool[wave_idx2][2], self.pool[wave_idx2][0]]
 
-        distance = distance_mod.fit(x, y)
+            distance_mod = copy.deepcopy(self.distance_module)
+            distance = distance_mod.fit(x, y)
+
         return distance
         
     
