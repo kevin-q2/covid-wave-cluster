@@ -1,4 +1,4 @@
-# Covid Wave Clustering
+# Covid Wave Clustering :ocean:
 
 In this repository is an implementation of a infection wave clustering methodology which has code to 
 
@@ -9,37 +9,35 @@ We consider a wave to be a short period of pronounced infection activity, and ar
 gives a good way to understand the evolving spatio-temporal patterns of a disease or virus.
 
 ## Installation 
-Here's how to get started:
-```
-# *Recommended* Clone the repository
-git clone https://github.com/your-username/your-repository.git
+To build a minimal installation, first ensure that poetry is installed 
+as a package manager. If you do not have poetry installed, 
+instructions and basic usage  may be found [here](https://python-poetry.org/docs/). 
+Importantly, this uses package is built with python version 3.12. 
 
-# OR install as a library
-pip install git+https://github.com/kevin-q2/wave_cluster.git#egg=wave_cluster
+Once poetry is installed, clone the repository
+and run:
+
+```
+poetry install
 ```
 
 I'd recommend simply cloning the entire repository in order to get all of the data and example notebooks, but installing just the 
 code as a library is possible as well. 
 
 Wherever we use the wavefinder or wav segmentation method, we are comparing our segmentations to 
-another good segmentation method implemented here:
-https://github.com/covid19db/epidemiological-waves/
-
-Please refer to their paper/code for details on how to use it!
+another good segmentation method implemented [here](https://github.com/covid19db/epidemiological-waves/).
+Please refer to their paper/code for details on how to use it.
 
 ## Data
 Integral to our analyses and experiments is the data collected and provided in `data/` with attribution given to the following sources:
-  1. [Google's Covid-19 Covid Repository](https://github.com/GoogleCloudPlatform/covid-19-open-data) records daily infection records from locations
-     around the world. To them we attribute daily infection records for US states in `us_state_daily.csv` and from countries around the world in `country_daily.csv`.
-     The data from `index.csv`, `demographics.csv`, and `geography.csv` also contain useful organizational and auxiliary information associated with this data.
+  1. [Google's Covid-19 Covid Repository](https://github.com/GoogleCloudPlatform/covid-19-open-data) records daily infection records, demographics,
+     and geographical information from locations around the world. 
   2. [Oxford's Covid Government Response Tracker](https://github.com/OxCGRT/covid-policy-dataset) records daily information about each locations
-     stringency or proactive responses to containment of the virus. We provide a this data for US states and a set of European countries in
-     `state_containment_health.csv` and `country_containment_health.csv` respectively.
-  3. From the US census we also collect information on each state's [centers of population](https://www.census.gov/geographies/reference-files/time-series/geo/centers-population.html) in
-     `state_centers.csv`, their [density](https://www.census.gov/data/tables/time-series/dec/density-data-text.html) of population in `us_state_density.csv` and their geographical
-     [boundary lines](https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html) for visualization found in shape
-     files in `visualization/tl_rd22_us_state/`
-  4. Finally we also include some shape files for [country visualization](https://public.opendatasoft.com/explore/dataset/world-administrative-boundaries/information/?flg=en-us&location=10,22.37175,114.10565&basemap=jawg.light) fand
+     stringency or proactive responses to containment of the virus. We include their average
+     containment health index measurements for both US states and a set of European countries.
+  3. For visualization we use state[] (2022) and county (2021) shape files collected from the US [census](https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.2022.html#list-tab-790442341), as well as shape files for countries provided by [OpenDataSoft](https://public.opendatasoft.com/explore/dataset/world-administrative-boundaries/information/?flg=en-us&location=10,22.37175,114.10565&basemap=jawg.light)
+
+NOTE: County data is not included in this repository since the files are too large. Please manually download from the sources above to use this dataset. All tools for cleaning the data are provided in `data/county/cleaning/`.
 
 ## Instructions
 
