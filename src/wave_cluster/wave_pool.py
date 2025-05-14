@@ -72,6 +72,7 @@ class WavePool:
         self.fit_waves_ = fit_waves_
         self.fit_distances_ = fit_distances_
         self.mask = mask
+        self.threshold = threshold
         self.cpu_count = cpu_count
         self.X = None
         self.pool = None
