@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-state_centers = pd.read_csv("../data/state_centers.txt", sep = ',', index_col = 0)
+state_centers = pd.read_csv("../data/county_centers.txt", sep = ',', index_col = 0)
 
 translator = {
     'US_AK': 'Alaska',

@@ -25,4 +25,13 @@ for l, col in enumerate(columns):
 
 # Save as a dataframe        
 data = pd.DataFrame(data, index = dates, columns = columns)
+
+# Starting from 2/9/2020 and ending 9/15/2022
+# (This ensures the dates come out nice after window average smoothing)
+data = data.loc['2020-02-09':'2022-09-15',:]
+
+# Dropping non-state and non-continental US locations.
+dr = ['US_AK', 'US_HI', 'US_DC', 'US_PR', 'US_VI', 'US_MP', 'US_GU', 'US_AS']
+data = data.drop(dr, axis = 1)
+
 data.to_csv('data/state/infections.csv')

@@ -22,6 +22,8 @@ for l, loc in enumerate(locations):
     idx = [date_index[i] for i in loc_dates]
     data[idx, l] = containment_health
 
-# Save as a dataframe        
-data = pd.DataFrame(data, index = dates, columns = locations)
-data.to_csv('data/state/gov_response.csv')
+# Fix the index and save as a dataframe        
+gov_response = pd.DataFrame(data, index = dates, columns = locations)
+infections = pd.read_csv("data/state/infections.csv", index_col = 0)
+gov_response = gov_response.loc[infections.index, infections.columns]
+gov_response.to_csv('data/state/gov_response.csv')
