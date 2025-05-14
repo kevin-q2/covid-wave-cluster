@@ -29,23 +29,23 @@ another good segmentation method implemented [here](https://github.com/covid19db
 Please refer to their paper/code for details on how to use it.
 
 ## Data
-Integral to our analyses and experiments is the data collected and provided in `data/` with attribution given to the following sources:
+Data and cleaning files for state, county, and country datasets are provided in `data` with attribution given to the following sources:
   1. [Google's Covid-19 Covid Repository](https://github.com/GoogleCloudPlatform/covid-19-open-data) records daily infection records, demographics,
      and geographical information from locations around the world. 
   2. [Oxford's Covid Government Response Tracker](https://github.com/OxCGRT/covid-policy-dataset) records daily information about each locations
      stringency or proactive responses to containment of the virus. We include their average
      containment health index measurements for both US states and a set of European countries.
-  3. For visualization we use state[] (2022) and county (2021) shape files collected from the US [census](https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.2022.html#list-tab-790442341), as well as shape files for countries provided by [OpenDataSoft](https://public.opendatasoft.com/explore/dataset/world-administrative-boundaries/information/?flg=en-us&location=10,22.37175,114.10565&basemap=jawg.light)
+  3. For visualization we use state (2022) and county (2021) shape files collected from the US [census](https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.2022.html#list-tab-790442341), as well as shape files for countries provided by [OpenDataSoft](https://public.opendatasoft.com/explore/dataset/world-administrative-boundaries/information/?flg=en-us&location=10,22.37175,114.10565&basemap=jawg.light)
 
-NOTE: County data is not included in this repository since the files are too large. Please manually download from the sources above to use this dataset. All tools for cleaning the data are provided in `data/county/cleaning/`.
+NOTE: County data is not included in this repository since the files are too large. Please manually download from the sources above to use this dataset. All tools for cleaning the data are provided in the `data/county/cleaning` folder.
 
 ## Instructions
+Examples showcasing our analyses can be found in the jupyter notebooks in `examples`. There you'll 
+see most of the code needed to run the segmentation and clustering processes, and produce figures to view the results. 
 
-Most of our analyses and experiments can be found in the jupyter notebooks in `examples/`. There you'll 
-find most of the code needed to run the segmentation and clustering algorithms, and produce 
-nice figures to view the results. 
+Often these are computationally intensive processes which cannot be confined to notebooks. In that case, we 
+also provide scripts to fully reproduce all of our exeriments within the `experiments` folder.
 
-We note that these are often computationally intensive processes which cannot be confined to a notebook. 
 So often in the notebooks you'll see that we import data from the `batch/` folder. In `batch/` we include 
 sets of python scripts which can be run to collect that data. Again, those are often computationally intensive to run,
 so we also include folders `batch/state/data/` or `batch/country/data` with data for precomputed segmentations, pairwise 
