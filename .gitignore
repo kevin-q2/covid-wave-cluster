@@ -164,6 +164,7 @@ cython_debug/
 # Some unwanted data (too large to push!)
 data/county/*.csv
 data/county/visualization/*
+experiments/county/data/*
 
 *.sh
 *error.txt
