@@ -53,11 +53,16 @@ def dynamic_unimodal(
 
     if len(data) == 0:
         raise ValueError("Input data cannot be empty.")
-    cdef int n = data.shape[0]
-    cdef cnp.ndarray[DTYPE_t, ndim=2] memo_table = np.full((2, n + 1), np.nan, dtype=DTYPE)
 
+    cdef int n = data.shape[0]
+
+    if not penalty_by_length <= n:
+        raise ValueError(
+            "Penalty by length parameter cannot be greater than the length of the array."
+        )
+
+    cdef cnp.ndarray[DTYPE_t, ndim=2] memo_table = np.full((2, n + 1), np.nan, dtype=DTYPE)
     cdef cnp.ndarray[DTYPE_t, ndim=2] inc_error_table, dec_error_table
-    
     inc_error_table, dec_error_table = (
         isotonic_error_table.error_tables(data, normalize = normalize)
     )

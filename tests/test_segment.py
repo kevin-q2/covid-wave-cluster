@@ -54,7 +54,7 @@ def test_dynamic_unimodal_strictly_decreasing():
 
 def test_dynamic_unimodal_large_penalty():
     data = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 1.0])
-    inflections, directions = dynamic_unimodal(data, penalty=1.0)
+    inflections, directions = dynamic_unimodal(data, penalty=1.0, normalize = True)
     
     # With a large penalty, the function should prefer fewer segments
     assert list(inflections) == [0, 6]
@@ -96,3 +96,28 @@ def test_dynamic_unimodal_multidimensional_array():
     data = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
     with pytest.raises(ValueError):
         dynamic_unimodal(data, penalty=0.5)
+
+
+
+def test_penalty_by_length():
+    # Test if penalty by length overrides the penalty parameter
+    data = np.array([1, 2, 3, 4, 5, 5, 4, 3, 2, 1], dtype=np.float64)
+    penalty = 100.0
+    penalty_by_length = 1
+
+    inflections, directions = dynamic_unimodal(
+        data,
+        penalty=penalty,
+        penalty_by_length=penalty_by_length
+    )
+    
+    # Check that the segmentation respects the penalty_by_length logic
+    assert len(inflections) > 2, "Penalty by length should allow more segments than a high penalty."
+
+    # Test invalid penalty by length
+    penalty_by_length = 11
+
+    # Cannot have penalty larger than size of the input
+    with pytest.raises(ValueError):
+        inflections, directions = dynamic_unimodal(data, penalty_by_length=penalty_by_length)
+    

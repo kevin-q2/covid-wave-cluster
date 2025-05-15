@@ -58,7 +58,7 @@ def window_average_2d(X : NDArray, front : NDArray, back : NDArray, axis : int =
     """
     assert front >= 0, "Front must be non-negative"
     assert back >= 0, "Back must be non-negative"
-    assert front + back < X.shape[0], "Front + back must be less than the length of x"
+    assert front + back < X.shape[axis], "Front + back must be less than the length of the axis"
     assert len(X.shape) == 2, "X must be a 2D array"
 
     window_avg = np.apply_along_axis(
@@ -89,6 +89,10 @@ def wave_mask(x : NDArray, t1 : int, t2 : int, fill : float = 0.0) -> NDArray:
     Returns:
         x_masked (np.ndarray): Masked array of size n.
     """
+    assert t1 >= 0, "Starting index must be non-negative."
+    assert t2 >=0, "Ending index must be non-negative."
+    assert t1 < len(x), "Starting index must be less than the length of the array."
+    assert t2 <= len(x), "Ending index must be less than or equal to the length of the array."
     x_masked = np.zeros(len(x)) + fill
     x_masked[t1:t2] = x[t1:t2]
     return x_masked
