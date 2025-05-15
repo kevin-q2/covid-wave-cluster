@@ -187,12 +187,10 @@ class WavePool:
             raise ValueError("Wave pool is not fitted. Please run .fit_waves() first.")
         
         distances = np.zeros((self.q,self.q))
-        
-        print("County waves: " + str(self.q))
 
         wave_pair_results = Parallel(n_jobs = self.cpu_count, backend = 'loky')(
             delayed(self.fit_distance_pairwise)(i,j)
-            for i in range(24) for j in range(i + 1, 24)
+            for i in range(self.q) for j in range(i + 1, self.q)
         )
             
         for i in range(self.q):
