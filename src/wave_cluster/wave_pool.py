@@ -187,7 +187,7 @@ class WavePool:
             raise ValueError("Wave pool is not fitted. Please run .fit_waves() first.")
         
         distances = np.zeros((self.q,self.q))
-
+        
         print("County waves: " + str(self.q))
 
         wave_pair_results = Parallel(n_jobs = self.cpu_count, backend = 'loky')(
