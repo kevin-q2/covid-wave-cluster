@@ -188,15 +188,24 @@ class WavePool:
         
         distances = np.zeros((self.q,self.q))
 
-        wave_pair_results = Parallel(n_jobs = self.cpu_count, backend = 'loky')(
-            delayed(self.fit_distance_pairwise)(i,j)
-            for i in range(self.q) for j in range(i + 1, self.q)
-        )
-            
+        valid_pairs = []
         for i in range(self.q):
             for j in range(i + 1, self.q):
-                distances[i,j] = wave_pair_results.pop(0)
-                distances[j,i] = distances[i,j]
+                if np.abs(self.pool[i][1] - self.pool[j][1]) <= self.threshold:
+                    valid_pairs.append((i,j))
+                else:
+                    distances[i,j] = np.inf
+                    distances[j,i] = np.inf
+
+        print('Number of valid pairs:', len(valid_pairs))
+        wave_pair_results = Parallel(n_jobs = self.cpu_count, backend = 'loky')(
+            delayed(self.fit_distance_pairwise)(i,j)
+            for i,j in valid_pairs[:240]
+        )
+            
+        for idx,(i,j) in enumerate(valid_pairs):
+            distances[i,j] = wave_pair_results[idx]
+            distances[j,i] = wave_pair_results[idx]
 
         self.distances = distances
 

@@ -3,12 +3,16 @@ import numpy as np
 from sklearn.metrics.pairwise import haversine_distances
 cimport numpy as cnp
 cnp.import_array()
+from libc.math cimport fabs
 
 # Typing
 from typing import Tuple, List, Callable, Union
 from numpy.typing import NDArray
 DTYPE = np.float64
 ctypedef cnp.float64_t DTYPE_t
+ctypedef cnp.int64_t DTYPE_int_t
+
+import time
 
 # NOTE: This is written in cython mainly to allow for better performance with dtw_distance. 
 #       The other functions are not cythonized, but are included here for completeness.
@@ -37,7 +41,7 @@ def euclidean_distance(
 
     assert x.shape == y.shape, "x and y must have the same shape."
 
-    return np.linalg.norm(x - y, ord=2)
+    return np.linalg.norm(x - y, ord = 2)
 
 
 ####################################################################################################
@@ -46,15 +50,14 @@ def euclidean_distance(
 def dtw_distance(
     cnp.ndarray[DTYPE_t, ndim = 1] x,
     cnp.ndarray[DTYPE_t, ndim = 1] y,
-    mult_penalty : List[float] = [1.0,1.0,1.0],
-    add_penalty : List[float] = [0.0,0.0,0.0],
-    distance_fn : Callable = euclidean_distance
+    cnp.ndarray[DTYPE_t, ndim = 1] mult_penalty,
+    cnp.ndarray[DTYPE_t, ndim = 1] add_penalty
 ) -> Tuple[float, List[Tuple[int]]]:
     """
     Computes the dynamic time warp distance between two sequences x and y.
     The dtw distance works by creating a matching or alignment between the 
     two sequences. The distance or cost of the alignment is computed by summing the
-    distances between the aligned elements.
+    euclidean distances between the aligned elements.
 
     This implementation allows for the use of different penalties for different types of
     sequence alignment 'moves.' Specifically we consider the following three scenarios 
@@ -69,6 +72,9 @@ def dtw_distance(
     3. The previous pair in the alignment matched x[i] with y[j] (diagonal move).
         dtw(i,j) = mult_penalty[2] * distance_fn(x[i], y[j]) + dtw(i-1,j-1) + add_penalty[2]
 
+    NOTE: That distance_fn is assumed to be the euclidean distance. Since this is only ever 
+        computed for pairs of 1d points, its computationally efficient to do so, since 
+        we can simply use the absolute difference.
 
     Args:
         x (np.ndarray[float64]): First sequence.
@@ -77,7 +83,6 @@ def dtw_distance(
             for vertical, horizontal, and diagonal moves respectively.
         add_penalty (List[float]): List of length 3 which describe additive penalties 
             for vertical, horizontal, and diagonal moves respectively.
-        distance_fn (function): Function to compute distance between individual elements.
 
     Returns:
         distance (float): The dtw distance between the two sequences.
@@ -89,38 +94,40 @@ def dtw_distance(
     cdef int i, j
     cdef int n = len(x)
     cdef int m = len(y)
-    cdef cnp.ndarray[DTYPE_t, ndim = 2] cost_array = np.zeros((n,m), dtype = DTYPE)
+    cdef cnp.ndarray[DTYPE_t, ndim = 2] cost_array = np.zeros((n,m), dtype=DTYPE)
     cost_array[:] = np.nan
-    cdef int min_move
-    cdef DTYPE_t min_cost
+    cdef DTYPE_int_t min_move
     cdef cnp.ndarray[DTYPE_t, ndim=1] costs = np.zeros(3, dtype=DTYPE)
-    
+    cdef DTYPE_t dist
+
     # Compute entries for cost array and track predecessors for alignment
+    start = time.time()
     for i in range(n):
         for j in range(m):
+            dist = abs(x[i] - y[j]) # euclidean distance in 1D
             if i == 0 and j == 0:
-                cost_array[i,j] = distance_fn(x[i], y[j])
+                cost_array[i,j] = dist
             elif i == 0:
                 cost_array[i,j] = (
-                    mult_penalty[1] * distance_fn(x[i], y[j]) +
+                    mult_penalty[1] * dist +
                     cost_array[i,j-1] +
                     add_penalty[1]
                 )
             elif j == 0:
                 cost_array[i,j] = (
-                    mult_penalty[0] * distance_fn(x[i], y[j]) + 
+                    mult_penalty[0] * dist + 
                     cost_array[i-1,j] + 
                     add_penalty[1]
                 )
             else:
                 costs[0] = (
-                    mult_penalty[0] * distance_fn(x[i], y[j]) + cost_array[i-1, j] + add_penalty[0]
+                    mult_penalty[0] * dist + cost_array[i-1, j] + add_penalty[0]
                 )
                 costs[1] = (
-                    mult_penalty[1] * distance_fn(x[i], y[j]) + cost_array[i, j-1] + add_penalty[1]
+                    mult_penalty[1] * dist + cost_array[i, j-1] + add_penalty[1]
                 )
                 costs[2] = (
-                    mult_penalty[2] * distance_fn(x[i], y[j]) + cost_array[i-1, j-1] + add_penalty[2]
+                    mult_penalty[2] * dist + cost_array[i-1, j-1] + add_penalty[2]
                 )
                 
                 min_move = np.argmin(costs)
@@ -131,23 +138,27 @@ def dtw_distance(
 
                 cost_array[i,j] = costs[min_move]
                 
-            
+    end = time.time()
+    print("Main loop time:", end - start)
             
     # Backtrack to find the optimal alignment
     i = n - 1 
     j = m - 1
     cdef DTYPE_t current_cost
     alignment = [(i, j)]
+
+    start = time.time()
     while i > 0 or j > 0:
         current_cost = cost_array[i, j]
+        dist = abs(x[i] - y[j]) # euclidean distance in 1D
         vertical_cost = (
-            mult_penalty[0] * distance_fn(x[i], y[j]) + cost_array[i-1, j] + add_penalty[0]
+            mult_penalty[0] * dist + cost_array[i-1, j] + add_penalty[0]
         )
         horizontal_cost = (
-            mult_penalty[1] * distance_fn(x[i], y[j]) + cost_array[i, j-1] + add_penalty[1]
+            mult_penalty[1] * dist + cost_array[i, j-1] + add_penalty[1]
         )
         diagonal_cost = (
-            mult_penalty[2] * distance_fn(x[i], y[j]) + cost_array[i-1, j-1] + add_penalty[2]
+            mult_penalty[2] * dist + cost_array[i-1, j-1] + add_penalty[2]
         )
         
         if current_cost == diagonal_cost:
@@ -161,6 +172,8 @@ def dtw_distance(
             j -= 1
             alignment = [(i, j)] + alignment
         
+    end = time.time()
+    print("Backtracking time:", end - start)
     return cost_array[n-1,m-1], alignment
 
 
