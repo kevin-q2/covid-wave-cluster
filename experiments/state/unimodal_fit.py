@@ -12,8 +12,8 @@ data_array = infections.to_numpy()
 
 wave_mod = Unimodal(penalty_by_length = 15)
 dist_mod = DynamicTimeWarp(
-    mult_penalty = [1.0,1.0,1.0],
-    add_penalty = [1/7,1/7,0.0],
+    mult_penalty = np.array([1.0,1.0,1.0], dtype=np.float64),
+    add_penalty = np.array([1/7,1/7,0.0], dtype=np.float64),
     normalize = True
 )
 wave_pool = WavePool(
