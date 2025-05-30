@@ -1,5 +1,6 @@
 import numpy as np
 import copy
+import itertools
 from joblib import Parallel, delayed, parallel_config
 from typing import Dict, Callable, Any, List, Tuple
 from numpy.typing import NDArray
@@ -24,7 +25,8 @@ class WavePool:
             fit_distances_ : bool = True,
             mask : bool = True,
             threshold : float = np.inf,
-            cpu_count : int = 1
+            cpu_count : int = 1,
+            distance_batch_size : int = 1
         ):
         """
         Args:
@@ -57,6 +59,10 @@ class WavePool:
 
             cpu_count (int): Number of processors available to use in parallel.
 
+            distance_batch_size (int): Number of wave pairs to compute distances for in a single
+                batch. This is used when cpu_count is greater than 1, and distances are computed 
+                in parallel. Using batches can help reduce the cost of overhead. 
+
         Attrs:
             X (np.ndarray): Input dataset of shape (n, m) where n is the number of timesteps
                 and m is the number of locations.
@@ -76,6 +82,7 @@ class WavePool:
         self.mask = mask
         self.threshold = threshold
         self.cpu_count = cpu_count
+        self.distance_batch_size = distance_batch_size
         self.X = None
         self.pool = None
         self.q = None
@@ -153,30 +160,43 @@ class WavePool:
         if self.pool is None:
             raise ValueError("Wave pool is not fitted. Please run .fit_waves() first.")
         
-        start1 = self.pool[wave_idx1][1]
-        start2 = self.pool[wave_idx2][1]
-        if np.abs(start1 - start2) > self.threshold:
-            distance = np.inf
+        if self.mask:
+            x = wave_mask(
+                self.X[: , self.pool[wave_idx1][0]],
+                self.pool[wave_idx1][1],
+                self.pool[wave_idx1][2]
+            )
+            y = wave_mask(
+                self.X[: , self.pool[wave_idx2][0]],
+                self.pool[wave_idx2][1],
+                self.pool[wave_idx2][2]
+            )
         else:
-            if self.mask:
-                x = wave_mask(
-                    self.X[: , self.pool[wave_idx1][0]],
-                    self.pool[wave_idx1][1],
-                    self.pool[wave_idx1][2]
-                )
-                y = wave_mask(
-                    self.X[: , self.pool[wave_idx2][0]],
-                    self.pool[wave_idx2][1],
-                    self.pool[wave_idx2][2]
-                )
-            else:
-                x = self.X[self.pool[wave_idx1][1] : self.pool[wave_idx1][2], self.pool[wave_idx1][0]]
-                y = self.X[self.pool[wave_idx2][1] : self.pool[wave_idx2][2], self.pool[wave_idx2][0]]
+            x = self.X[self.pool[wave_idx1][1] : self.pool[wave_idx1][2], self.pool[wave_idx1][0]]
+            y = self.X[self.pool[wave_idx2][1] : self.pool[wave_idx2][2], self.pool[wave_idx2][0]]
 
-            distance_mod = copy.deepcopy(self.distance_module)
-            distance = distance_mod.fit(x, y)
+        distance_mod = copy.deepcopy(self.distance_module)
+        distance = distance_mod.fit(x, y)
 
         return distance
+    
+
+    def fit_distance_batch(self, batch_pairs : List[Tuple[int, int]]) -> List[float]:
+        """
+        Computes the pairwise distances between a batch of wave pairs.
+
+        Args:
+            batch_pairs (List[Tuple[int, int]]): List of tuples where each tuple contains
+                the indices of two waves in the pool for which to compute the distance.
+        Returns:
+            List[float]: List of distances corresponding to the input wave pairs.
+        """
+        distances = []
+        for wave_idx1, wave_idx2 in batch_pairs:
+            distance = self.fit_distance_pairwise(wave_idx1, wave_idx2)
+            distances.append(distance)
+
+        return distances
         
     
     def fit_distances(self):
@@ -190,6 +210,7 @@ class WavePool:
         
         distances = np.zeros((self.q,self.q))
 
+        # Automatically threshold pairs of waves which are separated in time.
         valid_pairs = []
         for i in range(self.q):
             for j in range(i + 1, self.q):
@@ -199,26 +220,25 @@ class WavePool:
                     distances[i,j] = np.inf
                     distances[j,i] = np.inf
 
-        print('Number of valid pairs:', len(valid_pairs))
+        valid_pairs = valid_pairs[:1000]
 
-        start = time.time()
-        for i,j in valid_pairs[:24]:
-            self.fit_distance_pairwise(i,j)
-        end = time.time()
-        print('Loop time:', end - start)
-
+        batches = [
+            valid_pairs[i:i + self.distance_batch_size]
+            for i in range(0, len(valid_pairs), self.distance_batch_size)
+        ]
 
         start = time.time()
         wave_pair_results = Parallel(n_jobs = self.cpu_count, backend = 'loky')(
-            delayed(self.fit_distance_pairwise)(i,j)
-            for i,j in valid_pairs[:24]
+            delayed(self.fit_distance_batch)(batch)
+            for batch in batches
         )
         end = time.time()
         print('Parallel time:', end - start)
-            
+
+        flattened_results = list(itertools.chain.from_iterable(wave_pair_results))
         for idx,(i,j) in enumerate(valid_pairs):
-            distances[i,j] = wave_pair_results[idx]
-            distances[j,i] = wave_pair_results[idx]
+            distances[i,j] = flattened_results[idx]
+            distances[j,i] = flattened_results[idx]
 
         self.distances = distances
 
