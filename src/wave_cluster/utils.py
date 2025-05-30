@@ -4,6 +4,7 @@ import math
 from itertools import combinations
 from scipy.sparse import csr_matrix
 from numpy.typing import NDArray
+from typing import Tuple
 
 
 ####################################################################################################
@@ -190,4 +191,29 @@ def get_common_segments(
             return df.iloc[max_start : min_finish, pool_subset[:,0]]
         
 
-###########################################################################################
+####################################################################################################
+
+
+def percent_overlap(seg1 : Tuple[int,int], seg2 : Tuple[int,int]) -> float:
+    """
+    Computes the percentage of overlap between two wave segments.
+    The segments are defined by their start and end times.
+    Args:
+        seg1 (tuple or arraylike): A tuple containing the start and end times of the first segment.
+        seg2 (tuple or arraylike): A tuple containing the start and end times of the second segment.
+    """
+    if len(seg1) != 2 or len(seg2) != 2:
+        raise ValueError("Both segments must be tuples or array-like of length 2.")
+    
+    start1, end1 = seg1
+    start2, end2 = seg2
+
+    if start1 >= end1 or start2 >= end2:
+        raise ValueError("Segment start must be less than segment end.")
+    
+    overlap = max(0, min(end1, end2) - max(start1, start2))
+    norm = min(end1 - start1, end2 - start2)
+    return overlap/norm
+
+
+####################################################################################################

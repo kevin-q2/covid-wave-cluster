@@ -8,7 +8,7 @@ from numpy.typing import NDArray
 from .unimodal import Unimodal
 from .dyanmic_time_warp import DynamicTimeWarp
 from . import euclidean_distance
-from .utils import wave_mask
+from .utils import wave_mask, percent_overlap
 
 import time
 
@@ -214,7 +214,10 @@ class WavePool:
         valid_pairs = []
         for i in range(self.q):
             for j in range(i + 1, self.q):
-                if np.abs(self.pool[i][1] - self.pool[j][1]) <= self.threshold:
+                seg1 = self.pool[i, 1:]
+                seg2 = self.pool[j, 1:]
+                overlap = percent_overlap(seg1, seg2)
+                if overlap >= self.threshold:
                     valid_pairs.append((i,j))
                 else:
                     distances[i,j] = np.inf
