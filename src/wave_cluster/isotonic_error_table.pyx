@@ -3,7 +3,6 @@ import numpy as np
 cimport numpy as cnp
 cnp.import_array()
 from scipy.optimize import isotonic_regression
-from scipy.spatial import distance
 from .distances import euclidean_distance
 
 # Typing
