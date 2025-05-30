@@ -9,6 +9,8 @@ from .dyanmic_time_warp import DynamicTimeWarp
 from . import euclidean_distance
 from .utils import wave_mask
 
+import time
+
 
 class WavePool:
     """
@@ -198,10 +200,14 @@ class WavePool:
                     distances[j,i] = np.inf
 
         print('Number of valid pairs:', len(valid_pairs))
+
+        start = time.time()
         wave_pair_results = Parallel(n_jobs = self.cpu_count, backend = 'loky')(
             delayed(self.fit_distance_pairwise)(i,j)
             for i,j in valid_pairs[:240]
         )
+        end = time.time()
+        print('Time taken to compute pairwise distances:', end - start)
             
         for idx,(i,j) in enumerate(valid_pairs):
             distances[i,j] = wave_pair_results[idx]

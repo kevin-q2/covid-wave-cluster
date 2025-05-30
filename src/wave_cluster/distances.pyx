@@ -12,8 +12,6 @@ DTYPE = np.float64
 ctypedef cnp.float64_t DTYPE_t
 ctypedef cnp.int64_t DTYPE_int_t
 
-import time
-
 # NOTE: This is written in cython mainly to allow for better performance with dtw_distance. 
 #       The other functions are not cythonized, but are included here for completeness.
 
@@ -101,7 +99,6 @@ def dtw_distance(
     cdef DTYPE_t dist
 
     # Compute entries for cost array and track predecessors for alignment
-    start = time.time()
     for i in range(n):
         for j in range(m):
             dist = abs(x[i] - y[j]) # euclidean distance in 1D
@@ -137,17 +134,12 @@ def dtw_distance(
                     min_move = 2
 
                 cost_array[i,j] = costs[min_move]
-                
-    end = time.time()
-    print("Main loop time:", end - start)
             
     # Backtrack to find the optimal alignment
     i = n - 1 
     j = m - 1
     cdef DTYPE_t current_cost
     alignment = [(i, j)]
-
-    start = time.time()
     while i > 0 or j > 0:
         current_cost = cost_array[i, j]
         dist = abs(x[i] - y[j]) # euclidean distance in 1D
@@ -172,8 +164,6 @@ def dtw_distance(
             j -= 1
             alignment = [(i, j)] + alignment
         
-    end = time.time()
-    print("Backtracking time:", end - start)
     return cost_array[n-1,m-1], alignment
 
 
