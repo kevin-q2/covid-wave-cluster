@@ -142,3 +142,50 @@ def test_get_common_segments():
         1: [np.nan, np.nan, 8, 9, np.nan]
     })
     pd.testing.assert_frame_equal(result, expected)
+
+
+def test_percent_overlap():
+    # Test case 1: Fully overlapping segments
+    seg1 = (0, 10)
+    seg2 = (0, 10)
+    assert percent_overlap(seg1, seg2) == 1.0, "Expected 100% overlap for identical segments"
+
+    # Test case 2: Partial overlap
+    seg1 = (0, 10)
+    seg2 = (5, 15)
+    assert percent_overlap(seg1, seg2) == 0.5, "Expected 50% overlap for partial overlap"
+
+    # Test case 3: No overlap
+    seg1 = (0, 10)
+    seg2 = (10, 20)
+    assert percent_overlap(seg1, seg2) == 0.0, "Expected 0% overlap for non-overlapping segments"
+
+    # Test case 4: One segment completely inside the other
+    seg1 = (0, 10)
+    seg2 = (2, 8)
+    assert percent_overlap(seg1, seg2) == 1.0, "Expected 100% overlap for one segment inside the other"
+
+    # Test case 5: Reverse order of segments
+    seg1 = (5, 15)
+    seg2 = (0, 10)
+    assert percent_overlap(seg1, seg2) == 0.5, "Expected 50% overlap for reversed segment order"
+
+    # Test case 6: Invalid input - segment start >= end
+    with pytest.raises(ValueError, match="Segment start must be less than segment end."):
+        percent_overlap((10, 5), (0, 10))
+
+    # Test case 7: Invalid input - segment length not 2
+    with pytest.raises(ValueError, match="Both segments must be tuples or array-like of length 2."):
+        percent_overlap((0,), (0, 10))
+
+    # Test case 8: Negative values in segments
+    with pytest.raises(ValueError, match="Segment start must be non-negative."):
+        seg1 = (-5, 5)
+        seg2 = (0, 10)
+        percent_overlap(seg1, seg2)
+
+    # Test case 9: Zero-length segment
+    seg1 = (0, 0)
+    seg2 = (0, 10)
+    with pytest.raises(ValueError, match="Segment start must be less than segment end."):
+        percent_overlap(seg1, seg2)

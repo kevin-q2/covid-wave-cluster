@@ -211,6 +211,9 @@ def percent_overlap(seg1 : Tuple[int,int], seg2 : Tuple[int,int]) -> float:
     if start1 >= end1 or start2 >= end2:
         raise ValueError("Segment start must be less than segment end.")
     
+    if start1 < 0 or start2 < 0:
+        raise ValueError("Segment start must be non-negative.")
+    
     overlap = max(0, min(end1, end2) - max(start1, start2))
     norm = min(end1 - start1, end2 - start2)
     return overlap/norm

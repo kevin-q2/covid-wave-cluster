@@ -11,7 +11,9 @@ from wave_cluster.distances import dtw_distance, euclidean_distance, haversine, 
 def test_dtw_distance_basic_case():
     x = np.array([1, 2, 3], dtype=float)
     y = np.array([1, 2, 3], dtype=float)
-    distance, alignment = dtw_distance(x, y)
+    mult_penalty = np.array([1.0, 1.0, 1.0])
+    add_penalty = np.array([0.0, 0.0, 0.0])
+    distance, alignment = dtw_distance(x, y, mult_penalty=mult_penalty, add_penalty=add_penalty)
     
     # Assert the distance is zero for identical sequences
     assert distance == 0
@@ -21,7 +23,9 @@ def test_dtw_distance_basic_case():
 def test_dtw_distance_basic_misaligned():
     x = np.array([1, 1, 2, 3, 3], dtype=float)
     y = np.array([1, 2, 2, 2, 3], dtype=float)
-    distance, alignment = dtw_distance(x, y)
+    mult_penalty = np.array([1.0, 1.0, 1.0])
+    add_penalty = np.array([0.0, 0.0, 0.0])
+    distance, alignment = dtw_distance(x, y, mult_penalty=mult_penalty, add_penalty=add_penalty)
     
     assert distance == 0
     assert alignment == [(0, 0), (1, 0), (2, 1), (2, 2), (2, 3), (3, 4), (4, 4)]
@@ -29,7 +33,9 @@ def test_dtw_distance_basic_misaligned():
 def test_dtw_distance_different_lengths():
     x = np.array([1, 2, 3, 3], dtype = float)
     y = np.array([1, 2], dtype = float)
-    distance, alignment = dtw_distance(x, y)
+    mult_penalty = np.array([1.0, 1.0, 1.0])
+    add_penalty = np.array([0.0, 0.0, 0.0])
+    distance, alignment = dtw_distance(x, y, mult_penalty=mult_penalty, add_penalty=add_penalty)
     
     # Assert first element is matched with first element 
     assert alignment[0] == (0, 0)  # First element of x matches first element of y
@@ -39,8 +45,8 @@ def test_dtw_distance_different_lengths():
 def test_dtw_distance_custom_penalties():
     x = np.array([1, 2, 3], dtype = float)
     y = np.array([1, 2, 3], dtype = float)
-    mult_penalty = [2.0, 2.0, 1.0]
-    add_penalty = [1.0, 1.0, 0.0]
+    mult_penalty = np.array([2.0, 2.0, 1.0])
+    add_penalty = np.array([1.0, 1.0, 0.0])
     distance, alignment = dtw_distance(x, y, mult_penalty=mult_penalty, add_penalty=add_penalty)
     
     # Assert the distance is still zero for identical sequences
@@ -52,8 +58,8 @@ def test_dtw_distance_custom_penalties():
     # distances between individual elements are zeros.
     x = np.array([1, 1, 2, 3, 3], dtype=float)
     y = np.array([1, 2, 2, 2, 3], dtype=float)
-    mult_penalty = [5.0, 5.0, 1.0]
-    add_penalty = [0.0, 0.0, 0.0]
+    mult_penalty = np.array([5.0, 5.0, 1.0])
+    add_penalty = np.array([0.0, 0.0, 0.0])
     distance, alignment = dtw_distance(x, y, mult_penalty=mult_penalty, add_penalty=add_penalty)
     assert distance == 0
     assert alignment == [(0, 0), (1, 0), (2, 1), (2, 2), (2, 3), (3, 4), (4, 4)]
@@ -61,13 +67,14 @@ def test_dtw_distance_custom_penalties():
     # But additive penalties will!
     x = np.array([1, 1, 2, 3, 3], dtype=float)
     y = np.array([1, 2, 2, 2, 3], dtype=float)
-    mult_penalty = [1.0, 1.0, 1.0]
-    add_penalty = [3.0, 3.0, 0.0]
+    mult_penalty = np.array([1.0, 1.0, 1.0])
+    add_penalty = np.array([3.0, 3.0, 0.0])
     distance, alignment = dtw_distance(x, y, mult_penalty=mult_penalty, add_penalty=add_penalty)
     assert distance == 2
     assert alignment == [(0, 0), (1, 1), (2, 2), (3, 3), (4, 4)]
 
-
+'''
+# Deprecated functionality
 def test_dtw_distance_custom_distance_function():
     def manhattan_distance(a, b):
         return abs(a - b)
@@ -80,11 +87,14 @@ def test_dtw_distance_custom_distance_function():
     assert distance == 1
     # Assert the alignment is a perfect diagonal
     assert alignment == [(0, 0), (1, 1), (2, 2)]
+'''
 
 def test_dtw_distance_single_element():
     x = np.array([1], dtype = float)
     y = np.array([1], dtype = float)
-    distance, alignment = dtw_distance(x, y)
+    mult_penalty = np.array([1.0, 1.0, 1.0])
+    add_penalty = np.array([0.0, 0.0, 0.0])
+    distance, alignment = dtw_distance(x, y, mult_penalty=mult_penalty, add_penalty=add_penalty)
     
     # Assert the distance is zero for identical single-element sequences
     assert distance == 0
@@ -94,8 +104,10 @@ def test_dtw_distance_single_element():
 def test_dtw_distance_invalid_inputs():
     x = np.array([1, 2, 3], dtype = float)
     y = np.array([[1, 2], [3, 4]], dtype = float)  # Multidimensional array
+    mult_penalty = np.array([1.0, 1.0, 1.0])
+    add_penalty = np.array([0.0, 0.0, 0.0])
     with pytest.raises(ValueError, match=".*"):
-        dtw_distance(x, y)
+        dtw_distance(x, y, mult_penalty=mult_penalty, add_penalty=add_penalty)
 
 # -------------------- Tests for euclidean_distance --------------------
 

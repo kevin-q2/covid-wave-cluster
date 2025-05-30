@@ -24,7 +24,7 @@ wave_pool = WavePool(
     mask = True,
     threshold = 0.5,
     cpu_count = cpu_count,
-    distance_batch_size=100
+    distance_batch_size=10
 )
 wave_pool.load_pool('experiments/county/data/unimodal_pool.npz')
 wave_pool.fit(data_array)

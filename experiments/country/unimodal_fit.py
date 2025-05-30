@@ -22,8 +22,9 @@ wave_pool = WavePool(
     fit_waves_ = True,
     fit_distances_ = True,
     mask = True,
-    threshold = 90,
-    cpu_count = cpu_count
+    threshold = 0.5,
+    cpu_count = cpu_count,
+    distance_batch_size=10
 )
 
 wave_pool.fit(data_array)
