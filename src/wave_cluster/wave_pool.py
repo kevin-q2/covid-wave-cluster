@@ -202,12 +202,19 @@ class WavePool:
         print('Number of valid pairs:', len(valid_pairs))
 
         start = time.time()
+        for i,j in valid_pairs[:24]:
+            self.fit_distance_pairwise(i,j)
+        end = time.time()
+        print('Loop time:', end - start)
+
+
+        start = time.time()
         wave_pair_results = Parallel(n_jobs = self.cpu_count, backend = 'loky')(
             delayed(self.fit_distance_pairwise)(i,j)
-            for i,j in valid_pairs[:240]
+            for i,j in valid_pairs[:24]
         )
         end = time.time()
-        print('Time taken to compute pairwise distances:', end - start)
+        print('Parallel time:', end - start)
             
         for idx,(i,j) in enumerate(valid_pairs):
             distances[i,j] = wave_pair_results[idx]
