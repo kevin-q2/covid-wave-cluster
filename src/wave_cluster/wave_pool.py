@@ -223,7 +223,8 @@ class WavePool:
                     distances[i,j] = np.inf
                     distances[j,i] = np.inf
 
-        valid_pairs = valid_pairs[:1000]
+        print('Number of valid pairs:', len(valid_pairs))
+        valid_pairs = valid_pairs[:10000]
 
         batches = [
             valid_pairs[i:i + self.distance_batch_size]
@@ -236,7 +237,7 @@ class WavePool:
             for batch in batches
         )
         end = time.time()
-        print('Parallel time:', end - start)
+        print('Distance compute time:', end - start)
 
         flattened_results = list(itertools.chain.from_iterable(wave_pair_results))
         for idx,(i,j) in enumerate(valid_pairs):
