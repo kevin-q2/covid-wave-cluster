@@ -226,23 +226,38 @@ class WavePool:
         print('Number of valid pairs:', len(valid_pairs))
         valid_pairs = valid_pairs[:10000]
 
+        '''
         batches = [
             valid_pairs[i:i + self.distance_batch_size]
             for i in range(0, len(valid_pairs), self.distance_batch_size)
         ]
 
         start = time.time()
-        wave_pair_results = Parallel(n_jobs = self.cpu_count, backend = 'loky')(
+        wave_pair_results = Parallel(
+            n_jobs = self.cpu_count,
+            backend = 'threading',
+            batch_size = 'auto'
+        )(
             delayed(self.fit_distance_batch)(batch)
             for batch in batches
         )
         end = time.time()
         print('Distance compute time:', end - start)
+        '''
+        start = time.time()
+        wave_pair_results = Parallel(
+            n_jobs = self.cpu_count,
+            backend = 'threading',
+            batch_size = 'auto'
+        )(delayed(self.fit_distance_pairwise)(i,j) for i,j in valid_pairs)
+        
+        end = time.time()
+        print('Distance compute time:', end - start)
 
-        flattened_results = list(itertools.chain.from_iterable(wave_pair_results))
+        #flattened_results = list(itertools.chain.from_iterable(wave_pair_results))
         for idx,(i,j) in enumerate(valid_pairs):
-            distances[i,j] = flattened_results[idx]
-            distances[j,i] = flattened_results[idx]
+            distances[i,j] = wave_pair_results[idx]
+            distances[j,i] = wave_pair_results[idx]
 
         self.distances = distances
 
