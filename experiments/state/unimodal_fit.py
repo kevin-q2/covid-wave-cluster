@@ -22,7 +22,7 @@ wave_pool = WavePool(
     fit_waves_ = True,
     fit_distances_ = True,
     mask = True,
-    threshold = 0.5,
+    threshold = 0.75,
     cpu_count = cpu_count,
     distance_batch_size=10
 )
