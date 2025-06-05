@@ -8,7 +8,7 @@ from data_load import load_data
 cpu_count = 24
 
 infections = load_data()
-data_array = infections.to_numpy()
+data_array = infections.to_numpy(dtype = np.float64)
 
 wave_mod = Unimodal(penalty_by_length = 15)
 dist_mod = DynamicTimeWarp(
