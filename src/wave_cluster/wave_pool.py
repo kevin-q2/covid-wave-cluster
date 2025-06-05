@@ -175,8 +175,11 @@ class WavePool:
             x = self.X[self.pool[wave_idx1][1] : self.pool[wave_idx1][2], self.pool[wave_idx1][0]]
             y = self.X[self.pool[wave_idx2][1] : self.pool[wave_idx2][2], self.pool[wave_idx2][0]]
 
-        distance_mod = copy.deepcopy(self.distance_module)
-        distance = distance_mod.fit(x, y)
+        
+        #distance_mod = copy.deepcopy(self.distance_module)
+        #distance = distance_mod.fit(x, y)
+        
+        distance,alignment = self.distance_module.fit(x, y)
 
         return distance
     
@@ -211,6 +214,7 @@ class WavePool:
         distances = np.zeros((self.q,self.q))
 
         # Automatically threshold pairs of waves which are separated in time.
+        '''
         valid_pairs = []
         for i in range(self.q):
             for j in range(i + 1, self.q):
@@ -232,14 +236,57 @@ class WavePool:
             backend = 'loky',
             batch_size = 'auto'
         )(delayed(self.fit_distance_pairwise)(i,j) for i,j in valid_pairs)
-        
+
         end = time.time()
         print('Distance compute time:', end - start)
+        '''
 
-        #flattened_results = list(itertools.chain.from_iterable(wave_pair_results))
+        valid_pairs = []
+        for i in range(self.q):
+            if self.mask:
+                x = wave_mask(
+                    self.X[: , self.pool[i][0]],
+                    self.pool[i][1],
+                    self.pool[i][2]
+                )
+            else:
+                x = self.X[self.pool[i][1] : self.pool[i][2], self.pool[i][0]]
+            
+            for j in range(i + 1, self.q):
+                if self.mask:
+                    y = wave_mask(
+                        self.X[: , self.pool[j][0]],
+                        self.pool[j][1],
+                        self.pool[j][2]
+                    )
+                else:
+                    y = self.X[self.pool[j][1] : self.pool[j][2], self.pool[j][0]]
+
+                seg1 = self.pool[i, 1:]
+                seg2 = self.pool[j, 1:]
+                overlap = percent_overlap(seg1, seg2)
+                if overlap >= self.threshold:
+                    valid_pairs.append((x,y))
+                else:
+                    distances[i,j] = np.inf
+                    distances[j,i] = np.inf
+
+        print('Number of valid pairs:', len(valid_pairs))
+        valid_pairs = valid_pairs[:10000]
+
+        start = time.time()
+        wave_pair_results = Parallel(
+            n_jobs = self.cpu_count,
+            backend = 'loky',
+            batch_size = 'auto'
+        )(delayed(self.distance_module.fit)(x,y) for x,y in valid_pairs)
+
+        end = time.time()
+        print('Distance compute time:', end - start)
+        
         for idx,(i,j) in enumerate(valid_pairs):
-            distances[i,j] = wave_pair_results[idx]
-            distances[j,i] = wave_pair_results[idx]
+            distances[i,j] = wave_pair_results[0][idx]
+            distances[j,i] = wave_pair_results[0][idx]
 
         self.distances = distances
 

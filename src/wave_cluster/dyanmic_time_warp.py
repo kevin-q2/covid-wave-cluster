@@ -50,8 +50,8 @@ class DynamicTimeWarp:
         self.mult_penalty = mult_penalty
         self.add_penalty = add_penalty
         self.normalize = normalize
-        self.distance = None
-        self.alignment = None
+        #self.distance = None
+        #self.alignment = None
 
     def fit(
         self,
@@ -69,6 +69,10 @@ class DynamicTimeWarp:
 
         Returns:
             distance (float): The dtw distance between the two sequences.
+
+            alignment (List[Tuple[int]]): A list of tuples describing the alignment between 
+            the two sequences. Each tuple is of the form (i,j) indicating
+            that x[i] has been matched with y[j].
         """
         if self.normalize:
             norm = max(x.max(), y.max())
@@ -83,26 +87,31 @@ class DynamicTimeWarp:
             self.add_penalty
         )
 
-        self.alignment = alignment
-        self.distance = distance
-        return distance
+        #self.alignment = alignment
+        #self.distance = distance
+        return distance, alignment
     
-    def plot_permutation(self, axis : Callable = None):
+    def plot_permutation(self, alignment : List[Tuple[int]], axis : Callable = None):
         """
         Plots the alignment path of the DTW distance.
         Args:
+            alignment (List[Tuple[int]]): A list of tuples describing the alignment between 
+            the two sequences. Each tuple is of the form (i,j) indicating
+            that x[i] has been matched with y[j].
+
             axis (matplotlib axis): Axis to plot on.
         """
         if axis is None:
             fig,axis = plt.subplots(1,1)
 
-        xs = [i[0] for i in self.alignment]
-        ys = [i[1] for i in self.alignment]
+        xs = [i[0] for i in alignment]
+        ys = [i[1] for i in alignment]
         axis.plot(xs,ys)
 
 
     def plot_alignment(
             self,
+            alignment : List[Tuple[int]],
             x : NDArray,
             y : NDArray,
             offset : float = 1,
@@ -113,6 +122,11 @@ class DynamicTimeWarp:
         Plots the two time series and a visualization for their matched alignment.
 
         Args:
+            alignment (List[Tuple[int]]): A list of tuples describing the alignment between 
+                the two sequences. Each tuple is of the form (i,j) indicating
+                that x[i] has been matched with y[j].
+            x (NDArray): First time series (numpy array).
+            y (NDArray): Second time series (numpy array).
             offset (float): Vertical distance between time series for visualization.
             skips (int): Number of indices between consecutive, visualized alignment pairs.
             axis (matplotlib axis): Axis to plot on.
@@ -125,7 +139,7 @@ class DynamicTimeWarp:
         axis.plot(x)
         axis.plot(y_off)
 
-        for i in self.alignment[::skips]:
+        for i in alignment[::skips]:
             axis.plot(
                 [i[0],i[1]],
                 [x[i[0]], y_off[i[1]]],
