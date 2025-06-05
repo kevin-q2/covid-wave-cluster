@@ -7,7 +7,7 @@ from numpy.typing import NDArray
 
 from .unimodal import Unimodal
 from .dyanmic_time_warp import DynamicTimeWarp
-from . import euclidean_distance
+from . import euclidean_distance, dtw_distance
 from .utils import wave_mask, percent_overlap
 
 import time
@@ -240,7 +240,8 @@ class WavePool:
         end = time.time()
         print('Distance compute time:', end - start)
         '''
-
+        start = time.time()
+        pair_indices = []
         valid_pairs = []
         for i in range(self.q):
             if self.mask:
@@ -262,29 +263,40 @@ class WavePool:
                 else:
                     y = self.X[self.pool[j][1] : self.pool[j][2], self.pool[j][0]]
 
+                norm = max(x.max(), y.max())
+                if norm != 0:
+                    x = x / norm
+                    y = y / norm
+
                 seg1 = self.pool[i, 1:]
                 seg2 = self.pool[j, 1:]
                 overlap = percent_overlap(seg1, seg2)
                 if overlap >= self.threshold:
                     valid_pairs.append((x,y))
+                    pair_indices.append((i,j))
                 else:
                     distances[i,j] = np.inf
                     distances[j,i] = np.inf
 
         print('Number of valid pairs:', len(valid_pairs))
         valid_pairs = valid_pairs[:10000]
+        pair_indices = pair_indices[:10000]
+        end = time.time()
+        print('Pair preprocessing time:', end - start)
 
+        mult_penalty = np.array([1.0,1.0,1.0], dtype=np.float64)
+        add_penalty = np.array([1/7,1/7,0.0], dtype=np.float64)
         start = time.time()
         wave_pair_results = Parallel(
             n_jobs = self.cpu_count,
             backend = 'loky',
             batch_size = 'auto'
-        )(delayed(self.distance_module.fit)(x,y) for x,y in valid_pairs)
+        )(delayed(dtw_distance)(x,y, mult_penalty, add_penalty) for x,y in valid_pairs)
 
         end = time.time()
         print('Distance compute time:', end - start)
         
-        for idx,(i,j) in enumerate(valid_pairs):
+        for idx,(i,j) in enumerate(pair_indices):
             distances[i,j] = wave_pair_results[0][idx]
             distances[j,i] = wave_pair_results[0][idx]
 
