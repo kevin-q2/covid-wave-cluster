@@ -216,8 +216,8 @@ class WavePool:
         print('Distance compute time:', end - start)
         
         for idx,(i,j) in enumerate(valid_pairs):
-            distances[i,j] = wave_pair_results[0][idx]
-            distances[j,i] = wave_pair_results[0][idx]
+            distances[i,j] = wave_pair_results[idx]
+            distances[j,i] = wave_pair_results[idx]
 
         self.distances = distances
 
