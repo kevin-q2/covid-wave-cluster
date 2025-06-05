@@ -270,6 +270,13 @@ class WavePool:
         self.pool = pool_load['arr_0']
         self.q = self.pool.shape[0]
 
+        for i, (idx, start, end) in enumerate(self.pool):
+            if self.mask:
+                x = wave_mask(self.X[: , idx], start, end)
+            else:
+                x = self.X[start : end, idx]
+            self.waves[i] = x
+
 
     def save_distances(self, fname : str):
         """
