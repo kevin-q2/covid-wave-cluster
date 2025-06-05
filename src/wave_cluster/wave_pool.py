@@ -243,6 +243,18 @@ class WavePool:
         
         # Fit distances.
         if self.distance_module is not None and self.fit_distances_:
+            if self.pool is None:
+                raise ValueError(
+                    "Wave pool is not fitted. Please load a pool or run .fit_waves() first."
+                )
+            
+            for i, (idx, start, end) in enumerate(self.pool):
+                if self.mask:
+                    x = wave_mask(self.X[: , idx], start, end)
+                else:
+                    x = self.X[start : end, idx]
+                self.waves[i] = x
+
             self.fit_distances()
         elif self.fit_distances_ and self.distance_module is None:
             raise ValueError("Distance module must be set to fit distances.")
@@ -269,14 +281,6 @@ class WavePool:
         pool_load = np.load(fname)
         self.pool = pool_load['arr_0']
         self.q = self.pool.shape[0]
-
-        for i, (idx, start, end) in enumerate(self.pool):
-            if self.mask:
-                x = wave_mask(self.X[: , idx], start, end)
-            else:
-                x = self.X[start : end, idx]
-            self.waves[i] = x
-
 
     def save_distances(self, fname : str):
         """
