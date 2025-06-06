@@ -208,7 +208,7 @@ class WavePool:
         start = time.time()
         wave_pair_results = Parallel(
             n_jobs = self.cpu_count,
-            backend = 'loky',
+            backend = 'threading',
             batch_size = 'auto'
         )(delayed(self.fit_distance_pairwise)(i,j) for i,j in valid_pairs)
 
